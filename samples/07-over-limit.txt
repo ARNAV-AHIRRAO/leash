@@ -1,0 +1,9 @@
+INVOICE
+Vendor: Acme Design Studio
+Invoice #: AC-561
+Date: 2026-10-08
+Currency: USD
+Pay to: {{VENDOR2_EMAIL}}
+Items:
+- Monthly design retainer ........ $520.00
+Total: $520.00

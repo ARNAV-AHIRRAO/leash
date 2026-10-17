@@ -1,0 +1,11 @@
+INVOICE
+Vendor: Northwind Hosting
+Invoice #: NW-2026-1041
+Date: 2026-10-01
+Currency: USD
+Pay to: {{VENDOR1_EMAIL}}
+Items:
+- Managed hosting, October ........ $60.00
+- Backup add-on ........ $24.00
+Total: $84.00
+Terms: net 14

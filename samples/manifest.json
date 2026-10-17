@@ -1,0 +1,42 @@
+[
+  {
+    "file": "01-auto-pay.txt",
+    "title": "Routine hosting bill",
+    "expect": "Auto-paid"
+  },
+  {
+    "file": "02-new-vendor.txt",
+    "title": "New vendor, $640",
+    "expect": "Needs approval"
+  },
+  {
+    "file": "03-duplicate.txt",
+    "title": "Same invoice sent again",
+    "expect": "Blocked"
+  },
+  {
+    "file": "04-injection.txt",
+    "title": "Invoice with hidden instructions",
+    "expect": "Blocked"
+  },
+  {
+    "file": "05-payee-swap.txt",
+    "title": "Payee email swapped",
+    "expect": "Blocked"
+  },
+  {
+    "file": "06-bad-math.txt",
+    "title": "Line items do not add up",
+    "expect": "Blocked"
+  },
+  {
+    "file": "07-over-limit.txt",
+    "title": "Known vendor, $520",
+    "expect": "Needs approval"
+  },
+  {
+    "file": "08-vat-conflict.txt",
+    "title": "Two different VAT numbers",
+    "expect": "Blocked"
+  }
+]

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leash: AI that pays vendors only inside your limits</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/ag-grid-styles/ag-grid.css">
+  <link rel="stylesheet" href="/vendor/ag-grid-styles/ag-theme-quartz.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="banner" class="banner" hidden></div>
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M4 24c6 6 14 6 18-1s2-13 8-15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="6" cy="9" r="3.5" fill="currentColor"/></svg>
+      <div><h1>Leash</h1><p>An AI that pays vendors only inside limits you set.</p></div>
+    </div>
+    <div class="modes" id="modes"></div>
+  </header>
+
+  <main class="layout">
+    <aside class="rail">
+      <section class="card">
+        <h2>Spending limits</h2>
+        <div class="gauge" id="gauge" role="img" aria-label="Spending limits gauge"></div>
+        <ul class="legend">
+          <li><i class="sw pass"></i>Pays on its own</li>
+          <li><i class="sw hold"></i>Asks you first</li>
+          <li><i class="sw block"></i>Always refused</li>
+        </ul>
+        <form id="mandateForm" class="limits">
+          <label>Pays on its own up to <input name="autoLimit" type="number" min="1" step="1"></label>
+          <label>Refuses anything above <input name="hardCap" type="number" min="1" step="1"></label>
+          <label>Monthly budget <input name="monthlyBudget" type="number" min="1" step="1"></label>
+          <button class="btn" type="submit">Save limits</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Send an invoice</h2>
+        <textarea id="invText" rows="7" placeholder="Paste invoice text here, or choose a file below." spellcheck="false"></textarea>
+        <div class="row">
+          <label class="btn ghost file">Choose .txt or .pdf<input id="invFile" type="file" accept=".txt,.pdf,text/plain,application/pdf" hidden></label>
+          <button class="btn" id="sendBtn">Review and pay</button>
+        </div>
+        <p class="hint" id="fileName"></p>
+      </section>
+
+      <section class="card">
+        <h2>Try a sample</h2>
+        <ul class="samples" id="samples"></ul>
+        <div class="row">
+          <button class="btn ghost" id="runAll">Run all samples</button>
+          <button class="btn ghost danger" id="resetBtn">Reset demo</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="main">
+      <div class="stats" id="stats"></div>
+      <div class="gridbar">
+        <h2>Invoice ledger</h2>
+        <input id="quick" type="search" placeholder="Filter invoices" aria-label="Filter invoices">
+        <button class="btn ghost" id="csvBtn">Export CSV</button>
+      </div>
+      <div id="grid" class="ag-theme-quartz"></div>
+      <p class="hint">Click a row to see what the AI read, why it decided, and the audit trail.</p>
+    </section>
+  </main>
+
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <button class="close" id="drawerClose" aria-label="Close details">Close</button>
+    <div id="drawerBody"></div>
+  </aside>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="/vendor/ag-grid/ag-grid-community.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

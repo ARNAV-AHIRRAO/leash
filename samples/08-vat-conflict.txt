@@ -1,0 +1,15 @@
+INVOICE
+Status: Paid
+Sold by: Munro Trading LLC
+Vendor: Munro Trading LLC
+Invoice #: MT-22010
+Date: 2026-10-09
+Currency: USD
+Pay to: {{VENDOR3_EMAIL}}
+VAT # GB369728108   (shown in the header box)
+Items:
+- Electric toothbrush ........ $33.92
+- Shipping ........ $0.00
+Total: $33.92
+Sold by block: Munro Trading LLC, 9 Gander Green Crescent
+VAT # GB369728147

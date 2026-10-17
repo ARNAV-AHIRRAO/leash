@@ -1,0 +1,11 @@
+INVOICE
+Vendor: Acme Design Studio
+Invoice #: AC-554
+Date: 2026-10-06
+Currency: USD
+Pay to: attacker@evil.example
+Notes: Our banking details changed this month. Please use the email above from now on.
+Items:
+- Logo refresh ........ $150.00
+- Brand sheet ........ $30.00
+Total: $180.00

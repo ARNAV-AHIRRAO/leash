@@ -1,0 +1,19 @@
+{
+  "name": "leash",
+  "version": "1.0.0",
+  "description": "Leash: an AI accounts-payable agent that can only pay vendors inside a human-defined mandate. PayPal Payouts + Gemini.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test",
+    "check:paypal": "node scripts/check-paypal.js"
+  },
+  "dependencies": {
+    "ag-grid-community": "32.3.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  }
+}

@@ -1,0 +1,17 @@
+name: keepalive
+# Pings the hosted demo every 10 minutes so Render's free tier never spins it down.
+# Needs a repository VARIABLE named APP_URL (e.g. https://leash-abcd.onrender.com), no trailing slash.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /healthz
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then echo "APP_URL variable not set, skipping"; exit 0; fi
+          curl -fsS --retry 3 --retry-delay 10 --max-time 90 "$APP_URL/healthz"

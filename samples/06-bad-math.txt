@@ -1,0 +1,10 @@
+INVOICE
+Vendor: Northwind Hosting
+Invoice #: NW-2026-1102
+Date: 2026-10-07
+Currency: USD
+Pay to: {{VENDOR1_EMAIL}}
+Items:
+- Managed hosting, October ........ $60.00
+- Support hours ........ $30.00
+Total: $190.00
