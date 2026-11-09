@@ -84,6 +84,20 @@ export function createApp() {
     if (limited(req)) throw Object.assign(new Error('Slow down: too many uploads this minute.'), { status: 429 });
     return processInvoice({ text: req.body.text, pdfBase64: req.body.pdfBase64, filename: req.body.filename });
   }));
+  // Bulk approve/reject. Each id goes through the exact same checks as a single approval.
+  app.post('/api/invoices/bulk', wrap(async (req) => {
+    const { action, ids } = req.body || {};
+    if (!['approve', 'reject'].includes(action)) throw Object.assign(new Error('action must be approve or reject.'), { status: 400 });
+    if (!Array.isArray(ids) || !ids.length || ids.length > 25) throw Object.assign(new Error('Send between 1 and 25 invoice ids.'), { status: 400 });
+    const results = [];
+    for (const id of [...new Set(ids.map(String))]) {
+      try {
+        const inv = action === 'approve' ? await approve(id) : reject(id);
+        results.push({ id, ok: true, status: inv.status });
+      } catch (e) { results.push({ id, ok: false, error: e.message }); }
+    }
+    return { results };
+  }));
   app.post('/api/invoices/:id/approve', wrap((req) => approve(req.params.id)));
   app.post('/api/invoices/:id/reject', wrap((req) => reject(req.params.id)));
   app.post('/api/invoices/:id/sync', wrap((req) => syncPayout(req.params.id)));
@@ -103,7 +117,7 @@ export function createApp() {
 }
 
 export function startWorker() {
-  const t = setInterval(() => syncAllPending().catch(() => {}), 10_000);
+  const t = setInterval(() => syncAllPending().catch(() => { }), 10_000);
   t.unref?.();
   return t;
 }

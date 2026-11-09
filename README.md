@@ -61,7 +61,7 @@ Trust rules:
 
 With no credentials it runs in **mock mode**: an amber banner appears at the top and payouts are simulated. Everything else (extraction fallback, policy, approvals, audit) is real. Use mock mode to explore. **Do not record your demo video in mock mode.**
 
-Run the tests any time with `npm test` (31 tests, no network needed).
+Run the tests any time with `npm test` (35 tests, no network needed).
 
 ---
 
@@ -127,6 +127,8 @@ Left side, **Try a sample**. Click **Run all samples**, or click them one at a t
 | 6 | Line items do not add up | Refused: math |
 | 7 | Known vendor, $520 | Waits for you |
 | 8 | Two different VAT numbers, marked already paid | Refused: conflicting tax numbers (also flags "already paid") |
+
+Tick the checkboxes (only waiting invoices have one, or use the header box) and click **Approve selected** to pay several at once. A confirmation lists every vendor, amount and payee email first, and each invoice still passes the same checks as a single approval. Rows are tinted by outcome, statuses flash when they change (Paying to Paid), amounts turn amber or red when they pass your limits, and a pinned row at the bottom totals what has been paid out. Column order, widths and sort are remembered; **Reset view** restores defaults.
 
 Click any row for what the AI read, why it decided, the PayPal batch ID and status, and the audit trail. The **Spending limits** gauge on the left shows where each invoice landed. Edit the limits and click **Save limits**. **Reset demo** wipes the ledger.
 

@@ -63,6 +63,27 @@ test('approving twice or approving a denied invoice is refused', async () => {
   assert.equal((await post(`/api/invoices/${denied.id}/approve`)).status, 409);
 });
 
+test('bulk approve runs every id through the same checks', async () => {
+  const state = (await j('/api/state')).body;
+  const waiting = state.invoices.find((i) => i.invoiceNumber === 'AC-561');
+  const paid = state.invoices.find((i) => i.invoiceNumber === 'ZS-7730');
+  const denied = state.invoices.find((i) => i.invoiceNumber === 'NW-2026-1099');
+  const res = await post('/api/invoices/bulk', { action: 'approve', ids: [waiting.id, paid.id, denied.id, 'inv_nope'] });
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  const by = Object.fromEntries(res.body.results.map((r) => [r.id, r]));
+  assert.equal(by[waiting.id].ok, true);
+  assert.equal(by[waiting.id].status, 'PAYING');
+  assert.equal(by[paid.id].ok, false);
+  assert.equal(by[denied.id].ok, false);
+  assert.equal(by.inv_nope.ok, false);
+});
+
+test('bulk endpoint validates input', async () => {
+  assert.equal((await post('/api/invoices/bulk', { action: 'delete', ids: ['a'] })).status, 400);
+  assert.equal((await post('/api/invoices/bulk', { action: 'approve', ids: [] })).status, 400);
+  assert.equal((await post('/api/invoices/bulk', { action: 'approve', ids: Array.from({ length: 26 }, (_, i) => `x${i}`) })).status, 400);
+});
+
 test('mock payouts settle to PAID after sync', async () => {
   await new Promise((r) => setTimeout(r, 4200));
   const inv = (await j('/api/state')).body.invoices.find((i) => i.invoiceNumber === 'NW-2026-1041' && i.status === 'PAYING');

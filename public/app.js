@@ -25,7 +25,7 @@
   };
   const chip = (map, k) => { const [t, c] = map[k] || [k, 'info']; return el('span', { class: 'chip ' + c }, t); };
 
-  let state = null, gridApi = null, openId = null, busy = false;
+  let state = null, gridApi = null, openId = null, busy = false, lastSig = '';
 
   async function api(path, opts = {}) {
     const r = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
@@ -81,25 +81,89 @@
     }
     return wrap;
   }
+  const COLS_KEY = 'leash.cols.v2';
+  const payeeFor = (r) => state.vendors.find((v) => v.id === r.vendorId)?.paypalEmail || r.invoiceEmail || 'unknown payee';
+  const totalsRow = () => {
+    const paid = state.invoices.filter((i) => ['PAYING', 'PAID'].includes(i.status));
+    return [{ id: 'totals', isTotal: true, vendorName: `Paid out (${paid.length})`, amount: paid.reduce((a, i) => a + i.amount, 0), currency: 'USD' }];
+  };
+  let saveTimer;
+  const saveCols = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(COLS_KEY, JSON.stringify(gridApi.getColumnState())); } catch { } }, 300); };
+
+  function updateBulkBar() {
+    const rows = gridApi.getSelectedRows().filter((r) => r.status === 'AWAITING_APPROVAL');
+    $('bulkBar').hidden = rows.length === 0;
+    const total = rows.reduce((a, r) => a + r.amount, 0);
+    $('bulkCount').textContent = `${rows.length} selected, ${money(total, rows[0]?.currency)} total`;
+  }
+
+  async function bulk(action) {
+    const rows = gridApi.getSelectedRows().filter((r) => r.status === 'AWAITING_APPROVAL');
+    if (!rows.length) return;
+    const total = rows.reduce((a, r) => a + r.amount, 0);
+    let msg;
+    if (action === 'approve') {
+      const lines = rows.slice(0, 8).map((r) => `- ${r.vendorName} ${money(r.amount, r.currency)} to ${payeeFor(r)}${r.vendorId ? '' : '  (NEW VENDOR)'}`);
+      if (rows.length > 8) lines.push(`...and ${rows.length - 8} more`);
+      msg = `Approve and pay ${rows.length} invoice(s), ${money(total, rows[0].currency)} in total?\n\n${lines.join('\n')}`;
+    } else msg = `Reject ${rows.length} invoice(s)? Nothing will be paid.`;
+    if (!confirm(msg)) return;
+    try {
+      const res = await api('/api/invoices/bulk', { method: 'POST', body: { action, ids: rows.map((r) => r.id) } });
+      gridApi.deselectAll();
+      const ok = res.results.filter((x) => x.ok).length, bad = res.results.filter((x) => !x.ok);
+      toast(`${action === 'approve' ? 'Approved' : 'Rejected'} ${ok}${bad.length ? `, ${bad.length} failed: ${bad[0].error}` : ''}`, bad.length > 0);
+      await refresh();
+    } catch (e) { toast(e.message, true); }
+  }
+
   function initGrid() {
+    const real = (p) => p.data && !p.data.isTotal;
     gridApi = agGrid.createGrid($('grid'), {
       rowData: [],
+      pinnedBottomRowData: [],
       getRowId: (p) => p.data.id,
+      getRowClass: (p) => (p.data?.isTotal ? 'row-total' : 'row-' + p.data?.status),
+      rowSelection: {
+        mode: 'multiRow', checkboxes: true, headerCheckbox: true, selectAll: 'filtered',
+        enableClickSelection: false, hideDisabledCheckboxes: true,
+        isRowSelectable: (n) => n.data?.status === 'AWAITING_APPROVAL',
+      },
+      onSelectionChanged: updateBulkBar,
+      onColumnResized: (e) => { if (e.finished) saveCols(); },
+      onColumnMoved: saveCols,
+      onSortChanged: saveCols,
+      cellFlashDuration: 700,
+      cellFadeDuration: 1300,
       defaultColDef: { sortable: true, filter: true, resizable: true },
       overlayNoRowsTemplate: '<span>No invoices yet. Choose a sample on the left to start.</span>',
-      onRowClicked: (e) => openDrawer(e.data.id),
+      onRowClicked: (e) => {
+        if (e.node.isRowPinned() || e.event?.target?.closest?.('.ag-selection-checkbox, .ag-checkbox, button')) return;
+        openDrawer(e.data.id);
+      },
       columnDefs: [
-        { headerName: 'Time', field: 'createdAt', width: 115, valueFormatter: (p) => new Date(p.value).toLocaleTimeString([], { hour12: false }), sort: 'desc' },
+        { headerName: 'Time', field: 'createdAt', width: 115, valueFormatter: (p) => (p.value ? new Date(p.value).toLocaleTimeString([], { hour12: false }) : ''), sort: 'desc' },
         { headerName: 'Vendor', field: 'vendorName', flex: 1.2, minWidth: 150 },
         { headerName: 'Invoice', field: 'invoiceNumber', width: 150 },
-        { headerName: 'Amount', field: 'amount', width: 110, type: 'rightAligned', valueFormatter: (p) => money(p.value, p.data?.currency) },
-        { headerName: 'AI decision', field: 'verdict', width: 130, cellRenderer: (p) => chip(VERDICT, p.value) },
-        { headerName: 'Status', field: 'status', width: 160, cellRenderer: (p) => chip(STATUS, p.value) },
+        {
+          headerName: 'Amount', field: 'amount', width: 120, type: 'rightAligned',
+          valueFormatter: (p) => money(p.value, p.data?.currency),
+          cellClassRules: {
+            'amt-block': (p) => real(p) && state && p.value > state.mandate.hardCap,
+            'amt-hold': (p) => real(p) && state && p.value > state.mandate.autoLimit && p.value <= state.mandate.hardCap,
+          },
+        },
+        { headerName: 'AI decision', field: 'verdict', width: 130, cellRenderer: (p) => (real(p) ? chip(VERDICT, p.value) : ''), enableCellChangeFlash: true },
+        { headerName: 'Status', field: 'status', width: 160, cellRenderer: (p) => (real(p) ? chip(STATUS, p.value) : ''), enableCellChangeFlash: true },
         { headerName: 'Why', field: 'reasons', flex: 2, minWidth: 220, valueFormatter: (p) => (p.value || []).join('; '), tooltipValueGetter: (p) => (p.value || []).join('; ') },
-        { headerName: '', colId: 'act', width: 170, sortable: false, filter: false, cellRenderer: actionCell },
+        { headerName: '', colId: 'act', width: 170, sortable: false, filter: false, cellRenderer: (p) => (real(p) ? actionCell(p) : '') },
       ],
       tooltipShowDelay: 400,
     });
+    try {
+      const saved = JSON.parse(localStorage.getItem(COLS_KEY) || 'null');
+      if (saved) gridApi.applyColumnState({ state: saved, applyOrder: true });
+    } catch { }
   }
 
   // ---------- drawer ----------
@@ -164,8 +228,12 @@
     const f = $('mandateForm');
     if (!f.contains(document.activeElement)) for (const k of ['autoLimit', 'hardCap', 'monthlyBudget']) f[k].value = state.mandate[k];
     renderGauge(); renderStats();
+    const sig = `${state.mandate.autoLimit}/${state.mandate.hardCap}`;
     gridApi.setGridOption('rowData', state.invoices);
-    if (openId) openDrawer(openId).catch(() => {});
+    gridApi.setGridOption('pinnedBottomRowData', totalsRow());
+    if (sig !== lastSig) { lastSig = sig; gridApi.refreshCells({ columns: ['amount'], force: true }); }
+    updateBulkBar();
+    if (openId) openDrawer(openId).catch(() => { });
   }
 
   // ---------- wiring ----------
@@ -174,6 +242,10 @@
     $('drawerClose').onclick = closeDrawer;
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
     $('quick').oninput = (e) => gridApi.setGridOption('quickFilterText', e.target.value);
+    $('bulkApprove').onclick = () => bulk('approve');
+    $('bulkReject').onclick = () => bulk('reject');
+    $('bulkClear').onclick = () => gridApi.deselectAll();
+    $('viewBtn').onclick = () => { try { localStorage.removeItem(COLS_KEY); } catch { } gridApi.resetColumnState(); toast('View reset.'); };
     $('csvBtn').onclick = () => gridApi.exportDataAsCsv({ fileName: 'leash-ledger.csv' });
 
     $('mandateForm').onsubmit = async (e) => {
@@ -204,7 +276,7 @@
     $('resetBtn').onclick = async () => { if (!confirm('Clear all invoices and restore default limits and vendors?')) return; await api('/api/reset', { method: 'POST' }); closeDrawer(); toast('Demo reset.'); refresh(); };
 
     await refresh();
-    setInterval(() => refresh().catch(() => {}), 3000);
+    setInterval(() => refresh().catch(() => { }), 3000);
   }
   init().catch((e) => toast(e.message, true));
 })();

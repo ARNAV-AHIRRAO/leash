@@ -27,7 +27,7 @@ The key design rule: the AI reads, code decides. The payee always comes from the
 - PayPal Payouts API (sandbox) for payments, OAuth2 client credentials, `sender_batch_id` plus `PayPal-Request-Id` for idempotency so one invoice can never pay twice, payout status polling, and webhook handling with PayPal's signature verification endpoint.
 - Gemini with a JSON response schema for extraction. The document is treated as untrusted data. A regex scan adds a second, independent injection flag. If Gemini is unavailable, a deterministic parser takes over and the UI says so.
 - `src/policy.js` is a pure function with 15 unit tests. The full pipeline has integration tests running every sample against a mock PayPal.
-- AG Grid Community for the ledger. Hosted on Render using a `render.yaml` blueprint.
+- AG Grid Community for the ledger: checkbox row selection limited to invoices awaiting approval, bulk approve with a payee-by-payee confirmation, cell change flash when payouts settle, outcome-based row styling, conditional amount formatting driven by the live mandate, a pinned totals row, and persisted column state. Hosted on Render using a `render.yaml` blueprint.
 - Security basics: sandbox-only base URL hard-coded, strict Content-Security-Policy, all invoice text rendered as text (never HTML), rate limiting, input size limits.
 
 ## PayPal technologies used
@@ -40,7 +40,7 @@ Google Gemini (structured JSON output) reads invoices and flags text that tries 
 Deciding where the AI stops. The first design let the model pick the payee from the invoice, which is exactly what an attacker wants. Moving every money decision into a tested pure function fixed it. Keeping the hosted demo alive for weeks on free tiers shaped the architecture too: no free database that expires, a model fallback list, and a fallback parser.
 
 ## Accomplishments
-Eight built-in invoices that exercise every decision path, 31 automated tests, and a demo where the attack invoice is visibly stopped.
+Eight built-in invoices that exercise every decision path, 35 automated tests, and a demo where the attack invoice is visibly stopped.
 
 ## What I learned
 Agent safety is mostly about what the agent is not allowed to decide.
