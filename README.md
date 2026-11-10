@@ -16,6 +16,15 @@ Built for the PayPal AI Hackathon (Devpost). Stack: Node 20+, Express, PayPal Pa
 
 ---
 
+## Where PayPal, AI and sponsor tools are used
+
+- **PayPal (sandbox):** Payouts API pays vendors, OAuth 2.0 for access, payout status polling, webhook signature verification, idempotent payouts via sender_batch_id.
+- **AI:** Google Gemini (structured JSON output) reads invoices and flags prompt injection. A deterministic policy engine, not the AI, decides payments.
+- **AG Grid Community:** invoice ledger with checkbox bulk approve, cell change flash, outcome-based row styling, pinned totals row, persisted column state.
+- **Render:** free web service deployed from `render.yaml`.
+
+---
+
 ## How it works
 
 ```
